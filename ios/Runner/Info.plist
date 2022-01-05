@@ -41,5 +41,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Untuk mengupload identitas</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Untuk mengupload identitas</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Untuk mengupload identitas</string>
 </dict>
 </plist>

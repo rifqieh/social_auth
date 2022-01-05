@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:image_picker/image_picker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,49 +34,125 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final ImagePicker picker = ImagePicker();
+  int idUser = 1;
+
+  File? selectedImage;
+
+  pickImageFromGallery() async {
+    final XFile? pickedImage = await picker.pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (pickedImage != null) {
+      setState(() {
+        selectedImage = File(pickedImage.path);
+      });
+    }
+  }
+
+  pickImageFromCamera() async {
+    final XFile? pickedImage = await picker.pickImage(
+      source: ImageSource.camera,
+    );
+
+    if (pickedImage != null) {
+      setState(() {
+        selectedImage = File(pickedImage.path);
+      });
+    }
+  }
+
+  uploadImageToFirebase() async {
+    final ref = FirebaseStorage.instance.ref(
+      'images/imageUser$idUser.png',
+    );
+
+    await ref.putFile(selectedImage!);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextButton(
-              onPressed: () async {
-                final GoogleSignInAccount? googleUser =
-                    await GoogleSignIn().signIn();
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // NOTE: IMAGE PICKER
 
-                final GoogleSignInAuthentication? googleAuth =
-                    await googleUser?.authentication;
+              selectedImage != null ? Image.file(selectedImage!) : SizedBox(),
 
-                final credential = GoogleAuthProvider.credential(
-                  accessToken: googleAuth?.accessToken,
-                  idToken: googleAuth?.idToken,
-                );
-
-                FirebaseAuth.instance.signInWithCredential(credential);
-              },
-              child: Text(
-                'Sign in with Google',
+              GestureDetector(
+                onTap: () {
+                  pickImageFromGallery();
+                },
+                child: Icon(
+                  Icons.upload,
+                  size: 50,
+                ),
               ),
-            ),
-            TextButton(
-              onPressed: () async {
-                final LoginResult loginResult =
-                    await FacebookAuth.instance.login();
-// Create a credential from the access token
-                final OAuthCredential facebookAuthCredential =
-                    FacebookAuthProvider.credential(
-                        loginResult.accessToken!.token);
-// Once signed in, return the UserCredential
-                FirebaseAuth.instance
-                    .signInWithCredential(facebookAuthCredential);
-              },
-              child: Text(
-                'Sign in with Facebook',
+
+              GestureDetector(
+                onTap: () {
+                  pickImageFromCamera();
+                },
+                child: Icon(
+                  Icons.camera,
+                  size: 50,
+                ),
               ),
-            )
-          ],
+
+              TextButton(
+                onPressed: () async {
+                  print('upload image mulai');
+                  await uploadImageToFirebase();
+                  print('upload image selesai');
+                },
+                child: Text(
+                  'Upload Image',
+                ),
+              ),
+
+              // NOTE: SOCIAL AUTH
+
+              TextButton(
+                onPressed: () async {
+                  final GoogleSignInAccount? googleUser =
+                      await GoogleSignIn().signIn();
+
+                  final GoogleSignInAuthentication? googleAuth =
+                      await googleUser?.authentication;
+
+                  final credential = GoogleAuthProvider.credential(
+                    accessToken: googleAuth?.accessToken,
+                    idToken: googleAuth?.idToken,
+                  );
+
+                  FirebaseAuth.instance.signInWithCredential(credential);
+                },
+                child: Text(
+                  'Sign in with Google',
+                ),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final LoginResult loginResult =
+                      await FacebookAuth.instance.login();
+                  // Create a credential from the access token
+                  final OAuthCredential facebookAuthCredential =
+                      FacebookAuthProvider.credential(
+                          loginResult.accessToken!.token);
+                  // Once signed in, return the UserCredential
+                  FirebaseAuth.instance
+                      .signInWithCredential(facebookAuthCredential);
+                },
+                child: Text(
+                  'Sign in with Facebook',
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
